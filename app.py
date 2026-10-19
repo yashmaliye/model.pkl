@@ -4,31 +4,43 @@ import numpy as np
 
 # Page Configuration
 st.set_page_config(
-    page_title="Model Prediction Dashboard",
-    page_icon="⚡",
-    layout="centered",
-    initial_sidebar_state="expanded"
+    page_title="ML Model Predictor",
+    page_icon="✨",
+    layout="centered"
 )
 
-# Custom CSS Styling for an attractive layout
+# Custom CSS for modern vertical layout, colors, and shadows
 st.markdown("""
     <style>
     .main {
-        background-color: #f4f6f9;
+        background-color: #f8fafc;
+    }
+    .card {
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
     }
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
         color: white;
         font-weight: bold;
         border-radius: 10px;
-        padding: 0.6rem;
+        padding: 0.75rem;
         border: none;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+        background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
         color: white;
+    }
+    h1 {
+        color: #1e293b;
+        font-weight: 800;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -46,43 +58,43 @@ except Exception as e:
     st.error(f"Error loading model.pkl: {e}")
     st.stop()
 
-# Header Section
-st.title("⚡ Machine Learning Predictor")
-st.markdown("Welcome! Use the sidebar controls to input your feature values and instantly get predictions from your trained KNN model.")
+# Determine number of features expected by the model to prevent mismatch errors
+n_features = getattr(model, "n_features_in_", 5)
+feature_names = getattr(model, "feature_names_in_", [f"Feature {i+1}" for i in range(n_features)])
 
-# Sidebar Inputs
-st.sidebar.header("🎛️ Input Features")
-st.sidebar.markdown("Adjust the values below:")
+# Title Section
+st.title("🚀 Model Prediction Portal")
+st.markdown("Provide the required inputs below to generate a prediction from your trained classifier.")
 
-# Assuming 5 features based on your model configuration
-feature_1 = st.sidebar.slider("Feature 1", min_value=0.0, max_value=100.0, value=50.0)
-feature_2 = st.sidebar.slider("Feature 2", min_value=0.0, max_value=100.0, value=50.0)
-feature_3 = st.sidebar.slider("Feature 3", min_value=0.0, max_value=100.0, value=50.0)
-feature_4 = st.sidebar.slider("Feature 4", min_value=0.0, max_value=100.0, value=50.0)
-feature_5 = st.sidebar.slider("Feature 5", min_value=0.0, max_value=100.0, value=50.0)
+# Vertical Form Container with Shadow Effect
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("📊 Input Parameters")
 
-# Layout Columns for Information
-col1, col2 = st.columns(2)
+input_values = []
+# Create dynamic vertical inputs based on what the model expects
+for i in range(n_features):
+    name = feature_names[i] if i < len(feature_names) else f"Feature {i+1}"
+    val = st.number_input(f"Enter value for **{name}**", value=0.0, format="%.2f")
+    input_values.append(val)
 
-with col1:
-    st.info("### 📌 Model Overview\n* **Algorithm:** K-Nearest Neighbors\n* **Target Classes:** Hindi, English, Science, Maths, History, Geography, Total")
+st.markdown('</div>', unsafe_allow_html=True)
 
-with col2:
-    st.warning("### 💡 Instructions\n1. Modify features on the left.\n2. Click **Run Prediction**.\n3. View your result below!")
-
-st.markdown("---")
-
-# Prediction Trigger Button
-if st.button("🚀 Run Prediction"):
-    # Combine features into an array format expected by scikit-learn
-    input_data = np.array([[feature_1, feature_2, feature_3, feature_4, feature_5]])
+# Prediction Button & Logic
+if st.button("✨ Run Prediction"):
+    # Reshape input to match model expectation (1 sample, n features)
+    input_data = np.array([input_values])
     
-    with st.spinner("Processing prediction..."):
-        # Predict using the loaded model
-        prediction = model.predict(input_data)
+    try:
+        with st.spinner("Analyzing data..."):
+            prediction = model.predict(input_data)
+            
+            # Trigger celebration effect
+            st.balloons()
+            
+        # Display Result Card
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.success(f"### 🎉 Predicted Result: **{prediction[0]}**")
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        # Trigger visual effect
-        st.balloons()
-        
-    # Display Result
-    st.success(f"🎉 **Predicted Category:** `{prediction[0]}`")
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
