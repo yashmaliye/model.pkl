@@ -4,38 +4,54 @@ import numpy as np
 
 # Page Configuration
 st.set_page_config(
-    page_title="ML Model Predictor",
-    page_icon="✨",
+    page_title="Student Marks Prediction & Result",
+    page_icon="🎓",
     layout="centered"
 )
 
-# Custom CSS for modern vertical layout, colors, and shadows
+# Custom CSS for modern vertical card layout, colored boxes, and shadows
 st.markdown("""
     <style>
     .main {
-        background-color: #f8fafc;
+        background-color: #f1f5f9;
     }
     .card {
         background-color: #ffffff;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
         margin-bottom: 20px;
+    }
+    .pass-box {
+        background-color: #d1fae5;
+        border-left: 6px solid #10b981;
+        padding: 20px;
+        border-radius: 10px;
+        color: #065f46;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    .fail-box {
+        background-color: #fee2e2;
+        border-left: 6px solid #ef4444;
+        padding: 20px;
+        border-radius: 10px;
+        color: #991b1b;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
     }
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: white;
         font-weight: bold;
         border-radius: 10px;
         padding: 0.75rem;
         border: none;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
-        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
         color: white;
     }
     h1 {
@@ -45,7 +61,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Load the trained model safely
+# Load the model directly from context source definition
 @st.cache_resource
 def load_model():
     with open('model.pkl', 'rb') as file:
@@ -58,42 +74,64 @@ except Exception as e:
     st.error(f"Error loading model.pkl: {e}")
     st.stop()
 
-# Determine number of features expected by the model to prevent mismatch errors
-n_features = getattr(model, "n_features_in_", 5)
-feature_names = getattr(model, "feature_names_in_", [f"Feature {i+1}" for i in range(n_features)])
-
 # Title Section
-st.title("🚀 Model Prediction Portal")
-st.markdown("Provide the required inputs below to generate a prediction from your trained classifier.")
+st.title("🎓 Student Performance & Result Portal")
+st.markdown("Enter individual subject marks below. **Total marks** calculate automatically.")
 
-# Vertical Form Container with Shadow Effect
+# Main Form Card Container
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("📊 Input Parameters")
+st.subheader("📝 Enter Subject Marks (Out of 100)")
 
-input_values = []
-# Create dynamic vertical inputs based on what the model expects
-for i in range(n_features):
-    name = feature_names[i] if i < len(feature_names) else f"Feature {i+1}"
-    val = st.number_input(f"Enter value for **{name}**", value=0.0, format="%.2f")
-    input_values.append(val)
+# Vertical Inputs for Subject Marks (Based on your model's categories: Hindi, English, Science, Maths, History)
+hindi = st.number_input("Hindi Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
+english = st.number_input("English Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
+science = st.number_input("Science Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
+maths = st.number_input("Maths Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
+history = st.number_input("History Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 
+# Automatically calculate total marks and percentage
+total_marks = hindi + english + science + maths + history
+percentage = total_marks / 5.0
+
+st.markdown("---")
+st.markdown(f"### 📊 Calculated Total Marks: **{total_marks} / 500** &nbsp;&nbsp;|&nbsp;&nbsp; Percentage: **{percentage:.2f}%**")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Prediction Button & Logic
-if st.button("✨ Run Prediction"):
-    # Reshape input to match model expectation (1 sample, n features)
-    input_data = np.array([input_values])
+# Prediction Button & Dynamic Pass/Fail Layout
+if st.button("🚀 Predict Result"):
+    # The model expects 5 input features
+    input_data = np.array([[hindi, english, science, maths, history]])
     
     try:
-        with st.spinner("Analyzing data..."):
+        with st.spinner("Analyzing performance..."):
             prediction = model.predict(input_data)
+            predicted_label = str(prediction[0]).strip().lower()
             
-            # Trigger celebration effect
+            # Trigger celebration effects
             st.balloons()
             
-        # Display Result Card
+        # Determine if result is pass or fail based on model output or percentage check
+        # Checking if prediction contains pass/fail keywords or fallback to standard passing criteria (>= 40%)
+        is_pass = "fail" not in predicted_label and percentage >= 40.0
+        
+        # Display Result with Custom Colored Box Layout and Shadow
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.success(f"### 🎉 Predicted Result: **{prediction[0]}**")
+        if is_pass:
+            st.markdown(f"""
+                <div class="pass-box">
+                    <h2>🎉 Congratulations! Status: PASS</h2>
+                    <p><b>Model Category Output:</b> {prediction[0]}</p>
+                    <p>Your performance meets the passing criteria successfully with <b>{percentage:.2f}%</b>.</p>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+                <div class="fail-box">
+                    <h2>⚠️ Status: FAIL</h2>
+                    <p><b>Model Category Output:</b> {prediction[0]}</p>
+                    <p>Your overall performance is below the passing threshold. Keep working hard!</p>
+                </div>
+            """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
     except Exception as e:
