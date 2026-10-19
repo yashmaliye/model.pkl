@@ -61,7 +61,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Load the model directly from context source definition
+# Load the trained model safely
 @st.cache_resource
 def load_model():
     with open('model.pkl', 'rb') as file:
@@ -76,31 +76,32 @@ except Exception as e:
 
 # Title Section
 st.title("🎓 Student Performance & Result Portal")
-st.markdown("Enter individual subject marks below. **Total marks** calculate automatically.")
+st.markdown("Enter individual subject marks below. **Total marks** are automatically calculated and passed to the model.")
 
 # Main Form Card Container
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("📝 Enter Subject Marks (Out of 100)")
 
-# Vertical Inputs for Subject Marks (Based on your model's categories: Hindi, English, Science, Maths, History)
+# 6 Subject Inputs
 hindi = st.number_input("Hindi Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 english = st.number_input("English Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 science = st.number_input("Science Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 maths = st.number_input("Maths Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 history = st.number_input("History Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
+geography = st.number_input("Geography Marks", min_value=0.0, max_value=100.0, value=50.0, step=1.0)
 
-# Automatically calculate total marks and percentage
-total_marks = hindi + english + science + maths + history
-percentage = total_marks / 5.0
+# Automatically calculate total marks (the 7th feature required by the model)
+total_marks = hindi + english + science + maths + history + geography
+percentage = total_marks / 6.0
 
 st.markdown("---")
-st.markdown(f"### 📊 Calculated Total Marks: **{total_marks} / 500** &nbsp;&nbsp;|&nbsp;&nbsp; Percentage: **{percentage:.2f}%**")
+st.markdown(f"### 📊 Calculated Total Marks: **{total_marks} / 600** &nbsp;&nbsp;|&nbsp;&nbsp; Percentage: **{percentage:.2f}%**")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Prediction Button & Dynamic Pass/Fail Layout
 if st.button("🚀 Predict Result"):
-    # The model expects 5 input features
-    input_data = np.array([[hindi, english, science, maths, history]])
+    # The model expects exactly 7 features: Hindi, English, Science, Maths, History, Geography, Total[cite: 1]
+    input_data = np.array([[hindi, english, science, maths, history, geography, total_marks]])
     
     try:
         with st.spinner("Analyzing performance..."):
@@ -110,8 +111,7 @@ if st.button("🚀 Predict Result"):
             # Trigger celebration effects
             st.balloons()
             
-        # Determine if result is pass or fail based on model output or percentage check
-        # Checking if prediction contains pass/fail keywords or fallback to standard passing criteria (>= 40%)
+        # Determine if result is pass or fail based on model output and percentage check
         is_pass = "fail" not in predicted_label and percentage >= 40.0
         
         # Display Result with Custom Colored Box Layout and Shadow
